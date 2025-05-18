@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rock Paper Scissors</title>
+  <style>
+    @keyframes bounce {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+    @keyframes win-flash {
+      0% { background-color: #fff; }
+      50% { background-color: #90ee90; }
+      100% { background-color: #fff; }
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      color: #333;
+    }
+    h1 {
+      font-size: 3em;
+      margin-bottom: 10px;
+    }
+    p {
+      font-size: 1.2em;
+    }
+    .buttons {
+      display: flex;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    button {
+      font-size: 1.5em;
+      padding: 10px 25px;
+      border: none;
+      border-radius: 12px;
+      background-color: #ffffff;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      transition: transform 0.2s, background-color 0.3s;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #f0f0f0;
+      transform: scale(1.1);
+    }
+    .rock-button, .paper-button, .scissors-button {
+      animation: bounce 1s infinite;
+    }
+    #result {
+      font-size: 1.5em;
+      margin-top: 30px;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+    #result.win {
+      animation: win-flash 0.5s ease-in-out 3;
+    }
+    #name-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #game-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+    }
+    input[type="text"], select {
+      padding: 10px;
+      font-size: 1.2em;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin-bottom: 15px;
+    }
+    label {
+      font-size: 1.1em;
+      margin-bottom: 5px;
+    }
+    #music-toggle {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #fff;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #score-board {
+      margin-top: 20px;
+      font-size: 1.2em;
+    }
+    #game-over {
+      font-size: 1.5em;
+      margin-top: 20px;
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <audio id="win-sound" src="https://cdn.pixabay.com/audio/2021/08/04/audio_3ab6fa512d.mp3"></audio>
+  <audio id="tie-sound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_5ad5fa2878.mp3"></audio>
+  <audio id="lose-sound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_46a39dbb47.mp3"></audio>
+  <audio id="background-music" src="https://cdn.pixabay.com/audio/2023/03/16/audio_c9b968121b.mp3" loop preload="auto"></audio>
+
+  <button id="music-toggle" onclick="toggleMusic()">🔊</button>
+
+  <div id="name-screen">
+    <h1>Enter Your Name</h1>
+    <input type="text" id="player-name" placeholder="Your name here...">
+    <label for="opponent-select">Select the Opponent:</label>
+    <select id="opponent-select">
+      <option value="Amitabh Bachchan">Amitabh Bachchan</option>
+      <option value="Kamal Haasan">Kamal Haasan</option>
+      <option value="Mohanlal">Mohanlal</option>
+      <option value="Akshay Kumar">Akshay Kumar</option>
+      <option value="Aishwarya Rai Bachchan">Aishwarya Rai Bachchan</option>
+      <option value="Katrina Kaif">Katrina Kaif</option>
+    </select>
+    <button onclick="startGame()">Start Game</button>
+  </div>
+
+  <div id="game-screen">
+    <h1>Rock Paper Scissors</h1>
+    <p id="greeting"></p>
+    <p>Choose your move:</p>
+    <div class="buttons">
+      <button class="rock-button" onclick="play('rock')">Rock</button>
+      <button class="paper-button" onclick="play('paper')">Paper</button>
+      <button class="scissors-button" onclick="play('scissors')">Scissors</button>
+    </div>
+    <div id="result"></div>
+    <div id="score-board">Player: <span id="player-score">0</span> | <span id="opponent-name"></span>: <span id="opponent-score">0</span></div>
+    <div id="game-over"></div>
+    <button onclick="playAgain()">Play Again</button>
+  </div>
+
+  <script>
+    let playerName = '';
+    let opponent = '';
+    let isMusicPlaying = true;
+    let playerScore = 0;
+    let opponentScore = 0;
+
+    function startGame() {
+      const nameInput = document.getElementById('player-name');
+      const opponentSelect = document.getElementById('opponent-select');
+      if (nameInput.value.trim() === '') {
+        alert('Please enter your name.');
+        return;
+      }
+      playerName = nameInput.value.trim();
+      opponent = opponentSelect.value;
+
+      const bgMusic = document.getElementById('background-music');
+      bgMusic.volume = 0.4;
+      bgMusic.play().catch(() => {});
+
+      document.getElementById('name-screen').style.display = 'none';
+      document.getElementById('game-screen').style.display = 'flex';
+      document.getElementById('greeting').textContent = `Hello, ${playerName}! You're playing against ${opponent}. Let's play.`;
+      document.getElementById('opponent-name').textContent = opponent;
+    }
+
+    function play(playerChoice) {
+      if (playerScore >= 5 || opponentScore >= 5) return;
+
+      const choices = ['rock', 'paper', 'scissors'];
+      const emojis = { rock: '🪨', paper: '📄', scissors: '✂️' };
+      const computerChoice = choices[Math.floor(Math.random() * 3)];
+
+      let outcome = '';
+      let isPlayerWin = false;
+      const winSound = document.getElementById('win-sound');
+      const tieSound = document.getElementById('tie-sound');
+      const loseSound = document.getElementById('lose-sound');
+
+      if (playerChoice === computerChoice) {
+        outcome = "It's a tie!";
+        tieSound.play();
+      } else if (
+        (playerChoice === 'rock' && computerChoice === 'scissors') ||
+        (playerChoice === 'paper' && computerChoice === 'rock') ||
+        (playerChoice === 'scissors' && computerChoice === 'paper')
+      ) {
+        outcome = 'You win! 🎉';
+        isPlayerWin = true;
+        playerScore++;
+        winSound.play();
+      } else {
+        outcome = `${opponent} wins! 🤖`;
+        opponentScore++;
+        loseSound.play();
+      }
+
+      document.getElementById('player-score').textContent = playerScore;
+      document.getElementById('opponent-score').textContent = opponentScore;
+
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = `
+        ${playerName}, you chose <strong>${emojis[playerChoice]} ${playerChoice}</strong>.<br>
+        ${opponent} chose <strong>${emojis[computerChoice]} ${computerChoice}</strong>.<br>
+        <strong>${outcome}</strong>
+      `;
+
+      if (isPlayerWin) {
+        resultDiv.classList.add('win');
+        setTimeout(() => resultDiv.classList.remove('win'), 1500);
+      }
+
+      if (playerScore === 5 || opponentScore === 5) {
+        const gameOverMessage = playerScore === 5 ? `🎉 Congratulations ${playerName}, you won the match!` : `😞 ${opponent} wins the match! Better luck next time, ${playerName}.`;
+        document.getElementById('game-over').textContent = gameOverMessage;
+      }
+    }
+
+    function playAgain() {
+      document.getElementById('result').innerHTML = '';
+      document.getElementById('game-over').innerHTML = '';
+      playerScore = 0;
+      opponentScore = 0;
+      document.getElementById('player-score').textContent = '0';
+      document.getElementById('opponent-score').textContent = '0';
+    }
+
+    function toggleMusic() {
+      const bgMusic = document.getElementById('background-music');
+      const toggleBtn = document.getElementById('music-toggle');
+      if (isMusicPlaying) {
+        bgMusic.pause();
+        toggleBtn.textContent = '🔇';
+      } else {
+        bgMusic.play();
+        toggleBtn.textContent = '🔊';
+      }
+      isMusicPlaying = !isMusicPlaying;
+    }
+  </script>
+</body>
+</html>
